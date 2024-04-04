@@ -40,6 +40,24 @@ describe('when there is initially some blogs saved', () => {
             assert(blog.id);
         });
     });
+
+    test('a blog can be added', async () => {
+        const newBlog = {
+            title: 'New Blog Post',
+            author: 'New Author',
+            url: 'http://www.example.com',
+            likes: 0,
+        };
+
+        await api
+            .post('/api/blogs')
+            .send(newBlog)
+            .expect(201)
+            .expect('Content-Type', /application\/json/);
+
+        const blogsAtEnd = await helper.blogsInDb();
+        assert.strictEqual(blogsAtEnd.length, helper.listWithMultipleBlogs.length + 1);
+    });
 });
 
 after(() => {
