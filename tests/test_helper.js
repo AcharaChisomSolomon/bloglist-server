@@ -15,8 +15,8 @@ const listWithMultipleBlogs = [
     },
     {
         id: '5a422aa71b54a676234d17fa',
-        title: 'Blog Post 3',
-        author: 'Author 3',
+        title: 'Blog Post 1',
+        author: 'Author 1',
         url: 'http://www.example.com',
         likes: 6,
     },
