@@ -46,16 +46,17 @@ describe('when there is initially some blogs saved', () => {
             title: 'New Blog Post',
             author: 'New Author',
             url: 'http://www.example.com',
-            likes: 0,
+            likes: 3,
         };
 
-        await api
+        const response = await api
             .post('/api/blogs')
             .send(newBlog)
             .expect(201)
             .expect('Content-Type', /application\/json/);
 
         const blogsAtEnd = await helper.blogsInDb();
+        assert.strictEqual(response.body.likes, 3);
         assert.strictEqual(blogsAtEnd.length, helper.listWithMultipleBlogs.length + 1);
     });
 
@@ -73,6 +74,17 @@ describe('when there is initially some blogs saved', () => {
             .expect('Content-Type', /application\/json/);
 
         assert.strictEqual(response.body.likes, 0);
+    });
+
+    test('if title and url properties are missing, response status is 400', async () => {
+        const newBlog = {
+            author: 'New Author',
+        };
+
+        await api
+            .post('/api/blogs')
+            .send(newBlog)
+            .expect(400);
     });
 });
 
