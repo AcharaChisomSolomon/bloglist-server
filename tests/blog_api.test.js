@@ -6,7 +6,6 @@ const {
 } = require('node:test');
 const assert = require('node:assert');
 const mongoose = require('mongoose');
-// eslint-disable-next-line import/no-extraneous-dependencies
 const supertest = require('supertest');
 const app = require('../app');
 
@@ -30,7 +29,16 @@ describe('when there is initially some blogs saved', () => {
     test('all blogs are returned', async () => {
         const response = await api.get('/api/blogs');
 
-        assert.strictEqual(response.body.length, helper.listWithMultipleBlogs.length);
+        const blogsAtEnd = await helper.blogsInDb();
+        assert.strictEqual(response.body.length, blogsAtEnd.length);
+    });
+
+    test('they all have the id property', async () => {
+        const response = await api.get('/api/blogs');
+
+        response.body.forEach((blog) => {
+            assert(blog.id);
+        });
     });
 });
 
