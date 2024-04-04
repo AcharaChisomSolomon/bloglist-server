@@ -48,7 +48,7 @@ const blogsInDb = async () => {
 };
 
 const nonExistingId = async () => {
-    const blog = new Blog({ content: 'willremovethissoon' });
+    const blog = new Blog(listWithOneBlog[0]);
     await blog.save();
     await blog.deleteOne();
 
