@@ -1,34 +1,31 @@
+const Blog = require('../models/blog');
+
 const listWithMultipleBlogs = [
     {
-        id: '5a422aa71b54a676234d17f8',
         title: 'Blog Post 1',
         author: 'Author 1',
         url: 'http://www.example.com',
         likes: 4,
     },
     {
-        id: '5a422aa71b54a676234d17f9',
         title: 'Blog Post 2',
         author: 'Author 2',
         url: 'http://www.example.com',
         likes: 3,
     },
     {
-        id: '5a422aa71b54a676234d17fa',
         title: 'Blog Post 1',
         author: 'Author 1',
         url: 'http://www.example.com',
         likes: 6,
     },
     {
-        id: '5a422aa71b54a676234d17fb',
         title: 'Blog Post 4',
         author: 'Author 4',
         url: 'http://www.example.com',
         likes: 2,
     },
     {
-        id: '5a422aa71b54a676234d17fc',
         title: 'Blog Post 5',
         author: 'Author 5',
         url: 'http://www.example.com',
@@ -38,7 +35,6 @@ const listWithMultipleBlogs = [
 
 const listWithOneBlog = [
     {
-        id: '5a422aa71b54a676234d17f8',
         title: 'Blog Post 1',
         author: 'Author 1',
         url: 'http://www.example.com',
@@ -46,7 +42,22 @@ const listWithOneBlog = [
     },
 ];
 
+const blogsInDb = async () => {
+    const blogs = await Blog.find({});
+    return blogs.map((blog) => blog.toJSON());
+};
+
+const nonExistingId = async () => {
+    const blog = new Blog({ content: 'willremovethissoon' });
+    await blog.save();
+    await blog.deleteOne();
+
+    return blog._id.toString();
+};
+
 module.exports = {
     listWithMultipleBlogs,
     listWithOneBlog,
+    blogsInDb,
+    nonExistingId,
 };
