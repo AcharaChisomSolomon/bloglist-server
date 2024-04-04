@@ -58,6 +58,22 @@ describe('when there is initially some blogs saved', () => {
         const blogsAtEnd = await helper.blogsInDb();
         assert.strictEqual(blogsAtEnd.length, helper.listWithMultipleBlogs.length + 1);
     });
+
+    test('if likes property is missing, it defaults to 0', async () => {
+        const newBlog = {
+            title: 'New Blog Post',
+            author: 'New Author',
+            url: 'http://www.example.com',
+        };
+
+        const response = await api
+            .post('/api/blogs')
+            .send(newBlog)
+            .expect(201)
+            .expect('Content-Type', /application\/json/);
+
+        assert.strictEqual(response.body.likes, 0);
+    });
 });
 
 after(() => {
