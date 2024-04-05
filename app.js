@@ -15,12 +15,10 @@ mongoose.connect(config.MONGODB_URI);
 app.use(cors());
 app.use(express.json());
 app.use(middlewares.requestLogger);
-app.use(middlewares.tokenExtractor);
-app.use(middlewares.userExtractor);
 
 app.use('/api/login', loginRouter);
 app.use('/api/users', usersRouter);
-app.use('/api/blogs', blogRouter);
+app.use('/api/blogs', middlewares.tokenExtractor, middlewares.userExtractor, blogRouter);
 
 app.use(middlewares.errorHandler);
 app.use(middlewares.unknownEndpoint);
