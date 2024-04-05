@@ -31,5 +31,7 @@ module.exports = {
         'consistent-return': 'off',
         'import/no-extraneous-dependencies': 'off',
         'no-param-reassign': 'off',
+        'no-restricted-syntax': 'off',
+        'no-await-in-loop': 'off',
     },
 };

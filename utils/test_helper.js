@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const Blog = require('../models/blog');
 const User = require('../models/user');
 
@@ -30,7 +31,10 @@ const nonExistingId = async () => {
 
 const getValidUserId = async () => {
     await User.deleteMany({});
-    const user = await User({ username: 'first', password: 'cheesee' });
+    const user = await User({
+        username: 'first',
+        passwordHash: await bcrypt.hash('cheesee', 10),
+    });
     await user.save();
     return user._id.toString();
 };

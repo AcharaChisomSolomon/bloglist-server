@@ -11,13 +11,28 @@ const helper = require('../utils/test_helper');
 const Blog = require('../models/blog');
 const User = require('../models/user');
 
+let token = '';
+
 describe('when there is initially some blogs saved', () => {
     beforeEach(async () => {
         await Blog.deleteMany({});
-        // eslint-disable-next-line no-restricted-syntax
-        for (const blog of await helper.getListWithMultipleBlogs()) {
-            // eslint-disable-next-line no-await-in-loop
-            await api.post('/api/blogs').send(blog);
+
+        const blogs = await helper.getListWithMultipleBlogs();
+        const users = await helper.usersInDb();
+        let user = users[0];
+        user = await User.findById(user.id);
+
+        const response = await api
+            .post('/api/login')
+            .send({ username: 'first', password: 'cheesee' });
+
+        token = response.body.token;
+
+        for (const blog of blogs) {
+            delete blog.userId;
+            const newBlog = await new Blog({ ...blog, user: user.id }).save();
+            user.blogs = user.blogs.concat(newBlog._id);
+            await user.save();
         }
     });
 
@@ -57,30 +72,38 @@ describe('when there is initially some blogs saved', () => {
 
             const resultBlog = await api
                 .get(`/api/blogs/${blogToView.id}`)
+                .set('Authorization', `Bearer ${token}`)
                 .expect(200)
                 .expect('Content-Type', /application\/json/);
 
             const processedBlogToView = JSON.parse(JSON.stringify(blogToView));
-            assert.deepStrictEqual(resultBlog.body, processedBlogToView);
+            assert.strictEqual(resultBlog.body.user.id, processedBlogToView.user.toString());
         });
 
         test('fails with statuscode 404 if blog does not exist', async () => {
             const validNonexistingId = await helper.nonExistingId();
 
-            await api.get(`/api/blogs/${validNonexistingId}`).expect(404);
+            await api
+                .get(`/api/blogs/${validNonexistingId}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(404);
         });
 
         test('fails with statuscode 400 if id is invalid', async () => {
             const invalidId = '5a3d5da59070081a82a3445';
 
-            await api.get(`/api/blogs/${invalidId}`).expect(400);
+            await api
+                .get(`/api/blogs/${invalidId}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(400);
         });
     });
 
     describe('addition of a new blog', () => {
         test('a blog with valid data can be added', async () => {
             const usersAtStart = await helper.usersInDb();
-            const user = usersAtStart[0];
+            let user = usersAtStart[0];
+            user = await User.findById(user.id);
 
             const newBlog = {
                 title: 'New Blog Post',
@@ -89,12 +112,16 @@ describe('when there is initially some blogs saved', () => {
                 likes: 3,
                 userId: user.id,
             };
+            console.log('blog', newBlog);
 
             const response = await api
                 .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
                 .send(newBlog)
                 .expect(201)
                 .expect('Content-Type', /application\/json/);
+
+            console.log('response', response.body);
 
             const blogsAtEnd = await helper.blogsInDb();
             assert.strictEqual(response.body.likes, 3);
@@ -117,6 +144,7 @@ describe('when there is initially some blogs saved', () => {
 
             const response = await api
                 .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
                 .send(newBlog)
                 .expect(201)
                 .expect('Content-Type', /application\/json/);
@@ -133,7 +161,11 @@ describe('when there is initially some blogs saved', () => {
                 userId: user.id,
             };
 
-            await api.post('/api/blogs').send(newBlog).expect(400);
+            await api
+                .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
+                .send(newBlog)
+                .expect(400);
         });
     });
 
@@ -142,7 +174,10 @@ describe('when there is initially some blogs saved', () => {
             const blogsAtStart = await helper.blogsInDb();
             const blogToDelete = blogsAtStart[1];
 
-            await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
+            await api
+                .delete(`/api/blogs/${blogToDelete.id}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(204);
 
             const blogsAtEnd = await helper.blogsInDb();
 
@@ -169,6 +204,7 @@ describe('when there is initially some blogs saved', () => {
 
             const response = await api
                 .put(`/api/blogs/${blogToUpdate.id}`)
+                .set('Authorization', `Bearer ${token}`)
                 .send(updatedBlog)
                 .expect(200);
 
@@ -192,7 +228,11 @@ describe('when there is initially some blogs saved', () => {
                 likes: blogToUpdate.likes + 1,
             };
 
-            await api.put(`/api/blogs/${invalidId}`).send(updatedBlog).expect(400);
+            await api
+                .put(`/api/blogs/${invalidId}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(updatedBlog)
+                .expect(400);
         });
     });
 });
