@@ -51,6 +51,10 @@ blogRouter.delete('/:id', async (request, response) => {
     const { user } = request;
     const blog = await Blog.findById(request.params.id);
 
+    if (!blog) {
+        return response.status(400).json({ error: 'blog already deleted' });
+    }
+
     if (blog.user.toString() !== user.id.toString()) {
         return response.status(401).json({ error: 'unauthorized user' });
     }
@@ -66,7 +70,6 @@ blogRouter.put('/:id', async (request, response) => {
 
     const { user } = request;
     const blog = await Blog.findById(request.params.id);
-    console.log(blog);
 
     if (!blog) {
         return response.status(400).json({ error: 'blog not found' });

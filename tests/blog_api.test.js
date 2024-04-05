@@ -236,6 +236,20 @@ describe('when there is initially some blogs saved', () => {
             assert.strictEqual(response.body.error, 'unauthorized user');
             assert.strictEqual(blogsAtEnd.length, blogsAtStart.length);
         });
+
+        test('fails with status code 400 `blog already deleted` if blog does not exist', async () => {
+            const nonExistingId = await helper.nonExistingId();
+            const blogsAtStart = await helper.blogsInDb();
+
+            const response = await api
+                .delete(`/api/blogs/${nonExistingId}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(400);
+
+            const blogsAtEnd = await helper.blogsInDb();
+            assert.strictEqual(blogsAtEnd.length, blogsAtStart.length);
+            assert.strictEqual(response.body.error, 'blog already deleted');
+        });
     });
 
     describe('updating a blog', () => {
@@ -264,7 +278,7 @@ describe('when there is initially some blogs saved', () => {
             );
         });
 
-        test('fails with status code 400 if blog does not exist', async () => {
+        test('fails with status code 400 `blog not found` if blog does not exist', async () => {
             const nonExistingId = await helper.nonExistingId();
             const blogsAtStart = await helper.blogsInDb();
             const blogToUpdate = blogsAtStart[0];
