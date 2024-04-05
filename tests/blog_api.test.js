@@ -7,8 +7,9 @@ const supertest = require('supertest');
 const app = require('../app');
 
 const api = supertest(app);
-const helper = require('./test_helper');
+const helper = require('../utils/test_helper');
 const Blog = require('../models/blog');
+const User = require('../models/user');
 
 describe('when there is initially some blogs saved', () => {
     beforeEach(async () => {
@@ -197,5 +198,7 @@ describe('when there is initially some blogs saved', () => {
 });
 
 after(() => {
+    Blog.deleteMany({});
+    User.deleteMany({});
     mongoose.connection.close();
 });
