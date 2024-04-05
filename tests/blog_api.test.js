@@ -204,6 +204,38 @@ describe('when there is initially some blogs saved', () => {
 
             assert(!titles.includes(blogToDelete.title));
         });
+
+        test('if user is unauthorized, response status is 401', async () => {
+            const blogsAtStart = await helper.blogsInDb();
+            const blogToUpdate = blogsAtStart[0];
+
+            const user = await User.create({
+                username: 'unauthorized',
+                name: 'Unauthorized User',
+                passwordHash: await bcrypt.hash('unauthorized', 10),
+            });
+            await user.save();
+
+            const newToken = await api
+                .post('/api/login')
+                .send({ username: 'unauthorized', password: 'unauthorized' });
+            token = newToken.body.token;
+
+            const newBlog = {
+                ...blogToUpdate,
+                likes: blogToUpdate.likes + 1,
+            };
+
+            const response = await api
+                .delete(`/api/blogs/${blogToUpdate.id}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(newBlog)
+                .expect(401);
+
+            const blogsAtEnd = await helper.blogsInDb();
+            assert.strictEqual(response.body.error, 'unauthorized user');
+            assert.strictEqual(blogsAtEnd.length, blogsAtStart.length);
+        });
     });
 
     describe('updating a blog', () => {
