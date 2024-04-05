@@ -1,8 +1,5 @@
 const {
-    test,
-    after,
-    describe,
-    beforeEach,
+    test, after, describe, beforeEach,
 } = require('node:test');
 const assert = require('node:assert');
 const mongoose = require('mongoose');
@@ -16,7 +13,11 @@ const Blog = require('../models/blog');
 describe('when there is initially some blogs saved', () => {
     beforeEach(async () => {
         await Blog.deleteMany({});
-        await Blog.insertMany(helper.listWithMultipleBlogs);
+        // eslint-disable-next-line no-restricted-syntax
+        for (const blog of await helper.getListWithMultipleBlogs()) {
+            // eslint-disable-next-line no-await-in-loop
+            await api.post('/api/blogs').send(blog);
+        }
     });
 
     test('blogs are returned as json', async () => {
@@ -65,9 +66,7 @@ describe('when there is initially some blogs saved', () => {
         test('fails with statuscode 404 if blog does not exist', async () => {
             const validNonexistingId = await helper.nonExistingId();
 
-            await api
-                .get(`/api/blogs/${validNonexistingId}`)
-                .expect(404);
+            await api.get(`/api/blogs/${validNonexistingId}`).expect(404);
         });
 
         test('fails with statuscode 400 if id is invalid', async () => {
@@ -79,11 +78,15 @@ describe('when there is initially some blogs saved', () => {
 
     describe('addition of a new blog', () => {
         test('a blog with valid data can be added', async () => {
+            const usersAtStart = await helper.usersInDb();
+            const user = usersAtStart[0];
+
             const newBlog = {
                 title: 'New Blog Post',
                 author: 'New Author',
                 url: 'http://www.example.com',
                 likes: 3,
+                userId: user.id,
             };
 
             const response = await api
@@ -101,10 +104,14 @@ describe('when there is initially some blogs saved', () => {
         });
 
         test('if likes property is missing, it defaults to 0', async () => {
+            const usersAtStart = await helper.usersInDb();
+            const user = usersAtStart[0];
+
             const newBlog = {
                 title: 'New Blog Post',
                 author: 'New Author',
                 url: 'http://www.example.com',
+                userId: user.id,
             };
 
             const response = await api
@@ -117,8 +124,12 @@ describe('when there is initially some blogs saved', () => {
         });
 
         test('if title and url properties are missing, response status is 400', async () => {
+            const usersAtStart = await helper.usersInDb();
+            const user = usersAtStart[0];
+
             const newBlog = {
                 author: 'New Author',
+                userId: user.id,
             };
 
             await api.post('/api/blogs').send(newBlog).expect(400);
@@ -161,7 +172,13 @@ describe('when there is initially some blogs saved', () => {
                 .expect(200);
 
             const blogsAtEnd = await helper.blogsInDb();
-            assert.deepStrictEqual(blogsAtEnd[0], response.body);
+            assert.deepStrictEqual(
+                {
+                    ...blogsAtEnd[0],
+                    user: blogsAtEnd[0].user.toString(),
+                },
+                response.body,
+            );
         });
 
         test('fails with status code 400 if blog does not exist', async () => {
@@ -174,10 +191,7 @@ describe('when there is initially some blogs saved', () => {
                 likes: blogToUpdate.likes + 1,
             };
 
-            await api
-                .put(`/api/blogs/${invalidId}`)
-                .send(updatedBlog)
-                .expect(400);
+            await api.put(`/api/blogs/${invalidId}`).send(updatedBlog).expect(400);
         });
     });
 });
