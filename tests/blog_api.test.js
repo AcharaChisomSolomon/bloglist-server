@@ -265,7 +265,7 @@ describe('when there is initially some blogs saved', () => {
         });
 
         test('fails with status code 400 if blog does not exist', async () => {
-            const invalidId = '5a3d5da59070081a82a3445';
+            const nonExistingId = await helper.nonExistingId();
             const blogsAtStart = await helper.blogsInDb();
             const blogToUpdate = blogsAtStart[0];
 
@@ -274,11 +274,12 @@ describe('when there is initially some blogs saved', () => {
                 likes: blogToUpdate.likes + 1,
             };
 
-            await api
-                .put(`/api/blogs/${invalidId}`)
+            const response = await api
+                .put(`/api/blogs/${nonExistingId}`)
                 .set('Authorization', `Bearer ${token}`)
                 .send(updatedBlog)
                 .expect(400);
+            assert.strictEqual(response.body.error, 'blog not found');
         });
 
         test('if user is unauthorized, response status is 401', async () => {
