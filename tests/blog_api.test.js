@@ -2,6 +2,7 @@ const {
     test, after, describe, beforeEach,
 } = require('node:test');
 const assert = require('node:assert');
+const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 const supertest = require('supertest');
 const app = require('../app');
@@ -112,7 +113,6 @@ describe('when there is initially some blogs saved', () => {
                 likes: 3,
                 userId: user.id,
             };
-            console.log('blog', newBlog);
 
             const response = await api
                 .post('/api/blogs')
@@ -120,8 +120,6 @@ describe('when there is initially some blogs saved', () => {
                 .send(newBlog)
                 .expect(201)
                 .expect('Content-Type', /application\/json/);
-
-            console.log('response', response.body);
 
             const blogsAtEnd = await helper.blogsInDb();
             assert.strictEqual(response.body.likes, 3);
@@ -166,6 +164,22 @@ describe('when there is initially some blogs saved', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .send(newBlog)
                 .expect(400);
+        });
+
+        test('if token is missing, response status is 401', async () => {
+            const usersAtStart = await helper.usersInDb();
+            let user = usersAtStart[0];
+            user = await User.findById(user.id);
+
+            const newBlog = {
+                title: 'New Blog Post',
+                author: 'New Author',
+                url: 'http://www.example.com',
+                userId: user.id,
+            };
+
+            const response = await api.post('/api/blogs').send(newBlog).expect(401);
+            assert.strictEqual(response.body.error, 'missing or invalid token');
         });
     });
 
@@ -233,6 +247,35 @@ describe('when there is initially some blogs saved', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .send(updatedBlog)
                 .expect(400);
+        });
+
+        test('if user is unauthorized, response status is 401', async () => {
+            const blogsAtStart = await helper.blogsInDb();
+            const blogToUpdate = blogsAtStart[0];
+
+            const user = await User.create({
+                username: 'unauthorized',
+                name: 'Unauthorized User',
+                passwordHash: await bcrypt.hash('unauthorized', 10),
+            });
+            await user.save();
+
+            const newToken = await api
+                .post('/api/login')
+                .send({ username: 'unauthorized', password: 'unauthorized' });
+            token = newToken.body.token;
+
+            const newBlog = {
+                ...blogToUpdate,
+                likes: blogToUpdate.likes + 1,
+            };
+
+            const response = await api
+                .put(`/api/blogs/${blogToUpdate.id}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(newBlog)
+                .expect(401);
+            assert.strictEqual(response.body.error, 'unauthorized user');
         });
     });
 });

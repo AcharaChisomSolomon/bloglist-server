@@ -37,6 +37,9 @@ const tokenExtractor = (req, res, next) => {
     if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
         req.token = authorization.substring(7);
     } else {
+        if (req.method === 'POST' || req.method === 'DELETE' || req.method === 'PUT') {
+            return res.status(401).json({ error: 'missing or invalid token' });
+        }
         req.token = null;
     }
     next();
@@ -47,7 +50,7 @@ const userExtractor = (req, res, next) => {
     if (token) {
         const decodedToken = jwt.verify(token, process.env.SECRET);
         if (!decodedToken.id) {
-            return res.status(401).json({ error: 'token missing or invalid' });
+            return res.status(401).json({ error: 'missing or invalid token' });
         }
         req.user = decodedToken;
     } else {
