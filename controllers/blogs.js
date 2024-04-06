@@ -68,15 +68,10 @@ blogRouter.put('/:id', async (request, response) => {
         ...request.body,
     };
 
-    const { user } = request;
     const blog = await Blog.findById(request.params.id);
 
     if (!blog) {
         return response.status(400).json({ error: 'blog not found' });
-    }
-
-    if (blog.user.toString() !== user.id.toString()) {
-        return response.status(401).json({ error: 'unauthorized user' });
     }
 
     const result = await Blog.findByIdAndUpdate(

@@ -295,35 +295,6 @@ describe('when there is initially some blogs saved', () => {
                 .expect(400);
             assert.strictEqual(response.body.error, 'blog not found');
         });
-
-        test('if user is unauthorized, response status is 401', async () => {
-            const blogsAtStart = await helper.blogsInDb();
-            const blogToUpdate = blogsAtStart[0];
-
-            const user = await User.create({
-                username: 'unauthorized',
-                name: 'Unauthorized User',
-                passwordHash: await bcrypt.hash('unauthorized', 10),
-            });
-            await user.save();
-
-            const newToken = await api
-                .post('/api/login')
-                .send({ username: 'unauthorized', password: 'unauthorized' });
-            token = newToken.body.token;
-
-            const newBlog = {
-                ...blogToUpdate,
-                likes: blogToUpdate.likes + 1,
-            };
-
-            const response = await api
-                .put(`/api/blogs/${blogToUpdate.id}`)
-                .set('Authorization', `Bearer ${token}`)
-                .send(newBlog)
-                .expect(401);
-            assert.strictEqual(response.body.error, 'unauthorized user');
-        });
     });
 });
 
